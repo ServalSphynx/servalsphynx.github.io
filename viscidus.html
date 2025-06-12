@@ -15,42 +15,83 @@
      crossorigin="anonymous"></script>
   <meta charset="UTF-8" />
   <title>Viscidus</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style>
 body {
-  margin: 0;
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
 }
 
-.topnav {
+.navbar {
   overflow: hidden;
-  background-color: #333;
+  background-color: #333; 
 }
 
-.topnav a {
+.navbar a {
   float: left;
-  color: #f2f2f2;
+  font-size: 16px;
+  color: white;
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
-  font-size: 17px;
 }
 
-.topnav a:hover {
-  background-color: #ddd;
+.subnav {
+  float: left;
+  overflow: hidden;
+}
+
+.subnav .subnavbtn {
+  font-size: 16px;  
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit;
+  margin: 0;
+}
+
+.navbar a:hover, .subnav:hover .subnavbtn {
+  background-color: red;
+}
+
+.subnav-content {
+  display: none;
+  position: absolute;
+  left: 0;
+  background-color: red;
+  width: 100%;
+  z-index: 1;
+}
+
+.subnav-content a {
+  float: left;
+  color: white;
+  text-decoration: none;
+}
+
+.subnav-content a:hover {
+  background-color: #eee;
   color: black;
 }
 
-.topnav a.active {
-  background-color: #04AA6D;
-  color: white;
+.subnav:hover .subnav-content {
+  display: block;
 }
 </style>
 </head>
 <body>
-  <div class="topnav">
+  <div class="navbar">
   <a class="active" href="https://servalsphynx.github.io">Home</a>
   <a href="https://servalsphynx.github.io/warrior.html">Warrior</a>
-  <a href="https://servalsphynx.github.io/viscidus.html">Viscidus</a>
+  <div class="subnav">
+    <button class="subnavbtn">Bosses <i class="fa fa-caret-down"></i></button>
+    <div class="subnav-content">
+      <a href="https://servalsphynx.github.io/viscidus.html">Viscidus</a>
+      <a href="https://servalsphynx.github.io/vaelastrasz.html">Vaelastrasz</a>
+    </div>
+  </div>
 </div>
 <h1>Phase 1</h1>
   <p>Melee dps and hunters will want to pick up weapons with frost damage procs and apply frost oil to their weapons. <a class="q3 listview-cleartext" href="https://www.wowhead.com/classic/item=10761/coldrage-dagger">Coldrage Dagger</a> is a great option. Its speed also helps with the shatter in phase 2 if you dont have a decently fast alternative already. Its important to note that <a class="q3 listview-cleartext" href="https://www.wowhead.com/classic/item=10761/coldrage-dagger">Coldrage Dagger</a> can only proc if your gcd is available so you will only use Heroic Strike for this phase. Non mage wand users should pick up a fast frost wand. Mages can spam rank 1 Frostbolt.</p>
