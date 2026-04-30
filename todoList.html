@@ -80,8 +80,125 @@
 <body>
   
   <div class="navbar">
-  <a class="active" href="https://servalsphynx.github.io">Home</a>
+    <a class="active" href="https://servalsphynx.github.io"><i class="fa fa-home"></i></a>
   </div>
+
+  <div class="container">
+    <h2>To Do</h2>
+    <div class="input group">
+      <input type="text" id="taksInput" placeholder="Add a task">
+      <button id="addBtn" onclick="addTask()">Add</button>
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <div class="actions">
+        <button class="btn-secondary" onclick="downloadList()">Download List (.txt)</button>
+        <button="btn-secondary" onclick="document.getElementById('fileInput').click()">Import List</button>
+        <input type="file" id="fileInput" accept=".txt" onchange="importList(event)">
+    </div>
+  </div>
+  
+  <script>
+        const taskInput = document.getElementById('taskInput');
+        const taskList = document.getElementById('taskList');
+
+        window.onload = getTasks;
+
+        function addTask() {
+            const val = taskInput.value.trim();
+            if (!val) return;
+            createTaskElement(val);
+            saveLocalTask(val);
+            taskInput.value = '';
+        }
+
+        function createTaskElement(task) {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${task}</span><button class="delete-btn">Delete</button>`;
+            li.querySelector('.delete-btn').onclick = () => {
+                li.remove();
+                removeLocalTask(task);
+            };
+            taskList.appendChild(li);
+        }
+
+        // --- Export Logic ---
+        function downloadList() {
+            const tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            if (tasks.length === 0) return alert("Nothing to download!");
+
+            const date = new Date().toLocaleDateString();
+            let fileContent = `TO-DO LIST (${date})\n====================\n\n`;
+            tasks.forEach((t, i) => { fileContent += `${i + 1}. [ ] ${t}\n`; });
+
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `todo-export-${date.replace(/\//g, '-')}.txt`;
+            link.click();
+        }
+
+        // --- NEW: Import Logic ---
+        function importList(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const lines = content.split('\n');
+                const importedTasks = [];
+
+                // Regex: Look for lines starting with numbers, a dot, and "[ ] "
+                // It captures everything after the space.
+                const taskRegex = /^\d+\.\s\[\s\]\s(.*)$/;
+
+                lines.forEach(line => {
+                    const match = line.match(taskRegex);
+                    if (match && match[1]) {
+                        importedTasks.push(match[1].trim());
+                    }
+                });
+
+                if (importedTasks.length > 0) {
+                    if (confirm(`Found ${importedTasks.length} tasks. Do you want to replace your current list?`)) {
+                        replaceList(importedTasks);
+                    }
+                } else {
+                    alert("No valid tasks found in this file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function replaceList(newTasks) {
+            // Clear UI and LocalStorage
+            taskList.innerHTML = '';
+            localStorage.setItem('tasks', JSON.stringify(newTasks));
+            // Rebuild UI
+            newTasks.forEach(t => createTaskElement(t));
+        }
+
+        // Standard Storage Logic
+        function saveLocalTask(t) {
+            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            ts.push(t);
+            localStorage.setItem('tasks', JSON.stringify(ts));
+        }
+
+        function getTasks() {
+            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            ts.forEach(t => createTaskElement(t));
+        }
+
+        function removeLocalTask(t) {
+            let ts = JSON.parse(localStorage.getItem('tasks'));
+            const idx = ts.indexOf(t);
+            if (idx > -1) ts.splice(idx, 1);
+            localStorage.setItem('tasks', JSON.stringify(ts));
+        }
+    </script>
   
 </body>
 </html>
