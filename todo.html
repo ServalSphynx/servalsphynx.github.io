@@ -3,78 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do App with Export</title>
+    <title>To-Do App: Import & Export</title>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #eef2f3;
-            display: flex;
-            justify-content: center;
-            padding-top: 50px;
-        }
-
-        .container {
-            background: #ffffff;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-        }
-
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
+        body { font-family: 'Segoe UI', sans-serif; background-color: #eef2f3; display: flex; justify-content: center; padding-top: 40px; }
+        .container { background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; }
+        
+        .input-group { display: flex; gap: 8px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px; }
+        
+        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         #addBtn { background-color: #007bff; color: white; }
-        #addBtn:hover { background-color: #0056b3; }
+        
+        /* Action Buttons */
+        .actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
+        .btn-secondary { background-color: #6c757d; color: white; width: 100%; }
+        
+        /* Hidden file input for cleaner UI */
+        #fileInput { display: none; }
 
-        /* The Download Button Style */
-        #downloadBtn {
-            background-color: #6c757d;
-            color: white;
-            width: 100%;
-            margin-top: 15px;
-        }
-        #downloadBtn:hover { background-color: #5a6268; }
-
-        ul { list-style: none; padding: 0; }
-
-        li {
-            background: #fafafa;
-            border: 1px solid #eee;
-            margin-bottom: 8px;
-            padding: 12px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .delete-btn { background: #ff4757; color: white; padding: 5px 10px; }
+        ul { list-style: none; padding: 0; margin-top: 20px; }
+        li { background: #fafafa; border: 1px solid #eee; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background: #ff4757; color: white; padding: 5px 10px; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h2>My Tasks</h2>
+        
         <div class="input-group">
             <input type="text" id="taskInput" placeholder="Add a task...">
             <button id="addBtn" onclick="addTask()">Add</button>
@@ -82,7 +39,12 @@
         
         <ul id="taskList"></ul>
 
-        <button id="downloadBtn" onclick="downloadList()">Download as .txt</button>
+        <div class="actions">
+            <button class="btn-secondary" onclick="downloadList()">Download List (.txt)</button>
+            
+            <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">Import from File</button>
+            <input type="file" id="fileInput" accept=".txt" onchange="importList(event)">
+        </div>
     </div>
 
     <script>
@@ -109,39 +71,64 @@
             taskList.appendChild(li);
         }
 
-        // --- NEW: Download Logic ---
+        // --- Export Logic ---
         function downloadList() {
-            // 1. Get the current tasks from LocalStorage
             const tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            
-            if (tasks.length === 0) {
-                alert("The list is empty!");
-                return;
-            }
+            if (tasks.length === 0) return alert("Nothing to download!");
 
-            // 2. Format the list: Add a header and a bullet point for each task
             const date = new Date().toLocaleDateString();
-            let fileContent = `TO-DO LIST (${date})\n`;
-            fileContent += "====================\n\n";
-            
-            tasks.forEach((task, index) => {
-                fileContent += `${index + 1}. [ ] ${task}\n`;
-            });
+            let fileContent = `TO-DO LIST (${date})\n====================\n\n`;
+            tasks.forEach((t, i) => { fileContent += `${i + 1}. [ ] ${t}\n`; });
 
-            // 3. Create a Blob with the text content
             const blob = new Blob([fileContent], { type: 'text/plain' });
-            
-            // 4. Create a temporary link and trigger the download
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'my-todo-list.txt';
-            
-            // 5. Trigger the click and clean up
+            link.download = `todo-export-${date.replace(/\//g, '-')}.txt`;
             link.click();
-            URL.revokeObjectURL(link.href);
         }
 
-        // Standard LocalStorage functions
+        // --- NEW: Import Logic ---
+        function importList(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const lines = content.split('\n');
+                const importedTasks = [];
+
+                // Regex: Look for lines starting with numbers, a dot, and "[ ] "
+                // It captures everything after the space.
+                const taskRegex = /^\d+\.\s\[\s\]\s(.*)$/;
+
+                lines.forEach(line => {
+                    const match = line.match(taskRegex);
+                    if (match && match[1]) {
+                        importedTasks.push(match[1].trim());
+                    }
+                });
+
+                if (importedTasks.length > 0) {
+                    if (confirm(`Found ${importedTasks.length} tasks. Do you want to replace your current list?`)) {
+                        replaceList(importedTasks);
+                    }
+                } else {
+                    alert("No valid tasks found in this file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function replaceList(newTasks) {
+            // Clear UI and LocalStorage
+            taskList.innerHTML = '';
+            localStorage.setItem('tasks', JSON.stringify(newTasks));
+            // Rebuild UI
+            newTasks.forEach(t => createTaskElement(t));
+        }
+
+        // Standard Storage Logic
         function saveLocalTask(t) {
             let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
             ts.push(t);
@@ -155,7 +142,8 @@
 
         function removeLocalTask(t) {
             let ts = JSON.parse(localStorage.getItem('tasks'));
-            ts.splice(ts.indexOf(t), 1);
+            const idx = ts.indexOf(t);
+            if (idx > -1) ts.splice(idx, 1);
             localStorage.setItem('tasks', JSON.stringify(ts));
         }
     </script>
