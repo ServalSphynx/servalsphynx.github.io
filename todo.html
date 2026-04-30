@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal To-Do App</title>
+    <title>To-Do App with Export</title>
     <style>
-        /* CSS: The Styling */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: #eef2f3;
             display: flex;
             justify-content: center;
-            padding-top: 60px;
-            margin: 0;
+            padding-top: 50px;
         }
 
         .container {
@@ -24,16 +22,10 @@
             max-width: 400px;
         }
 
-        h2 {
-            margin-top: 0;
-            color: #333;
-            text-align: center;
-        }
-
         .input-group {
             display: flex;
             gap: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         input {
@@ -41,32 +33,30 @@
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 6px;
-            outline: none;
-            transition: border-color 0.3s;
         }
 
-        input:focus {
-            border-color: #007bff;
-        }
-
-        button#addBtn {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
+        button {
+            padding: 10px 15px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
+            transition: 0.2s;
         }
 
-        button#addBtn:hover {
-            background-color: #0056b3;
-        }
+        #addBtn { background-color: #007bff; color: white; }
+        #addBtn:hover { background-color: #0056b3; }
 
-        ul {
-            list-style-type: none;
-            padding: 0;
+        /* The Download Button Style */
+        #downloadBtn {
+            background-color: #6c757d;
+            color: white;
+            width: 100%;
+            margin-top: 15px;
         }
+        #downloadBtn:hover { background-color: #5a6268; }
+
+        ul { list-style: none; padding: 0; }
 
         li {
             background: #fafafa;
@@ -76,28 +66,9 @@
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .delete-btn {
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .delete-btn:hover {
-            background: #ff6b81;
-        }
+        .delete-btn { background: #ff4757; color: white; padding: 5px 10px; }
     </style>
 </head>
 <body>
@@ -105,70 +76,87 @@
     <div class="container">
         <h2>My Tasks</h2>
         <div class="input-group">
-            <input type="text" id="taskInput" placeholder="Add a new task...">
+            <input type="text" id="taskInput" placeholder="Add a task...">
             <button id="addBtn" onclick="addTask()">Add</button>
         </div>
+        
         <ul id="taskList"></ul>
+
+        <button id="downloadBtn" onclick="downloadList()">Download as .txt</button>
     </div>
 
     <script>
-        /* JavaScript: The Logic */
         const taskInput = document.getElementById('taskInput');
         const taskList = document.getElementById('taskList');
 
-        // Load tasks when the page opens
         window.onload = getTasks;
 
-        // Allow "Enter" key to add tasks
-        taskInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                addTask();
-            }
-        });
-
         function addTask() {
-            const taskValue = taskInput.value.trim();
-            if (taskValue === '') return;
-
-            createTaskElement(taskValue);
-            saveLocalTask(taskValue);
+            const val = taskInput.value.trim();
+            if (!val) return;
+            createTaskElement(val);
+            saveLocalTask(val);
             taskInput.value = '';
         }
 
         function createTaskElement(task) {
             const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${task}</span>
-                <button class="delete-btn">Delete</button>
-            `;
-
-            // Delete functionality
-            li.querySelector('.delete-btn').onclick = function() {
+            li.innerHTML = `<span>${task}</span><button class="delete-btn">Delete</button>`;
+            li.querySelector('.delete-btn').onclick = () => {
                 li.remove();
                 removeLocalTask(task);
             };
-
             taskList.appendChild(li);
         }
 
-        function saveLocalTask(task) {
-            let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            tasks.push(task);
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+        // --- NEW: Download Logic ---
+        function downloadList() {
+            // 1. Get the current tasks from LocalStorage
+            const tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            
+            if (tasks.length === 0) {
+                alert("The list is empty!");
+                return;
+            }
+
+            // 2. Format the list: Add a header and a bullet point for each task
+            const date = new Date().toLocaleDateString();
+            let fileContent = `TO-DO LIST (${date})\n`;
+            fileContent += "====================\n\n";
+            
+            tasks.forEach((task, index) => {
+                fileContent += `${index + 1}. [ ] ${task}\n`;
+            });
+
+            // 3. Create a Blob with the text content
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            
+            // 4. Create a temporary link and trigger the download
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'my-todo-list.txt';
+            
+            // 5. Trigger the click and clean up
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Standard LocalStorage functions
+        function saveLocalTask(t) {
+            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            ts.push(t);
+            localStorage.setItem('tasks', JSON.stringify(ts));
         }
 
         function getTasks() {
-            let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            tasks.forEach(task => createTaskElement(task));
+            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+            ts.forEach(t => createTaskElement(t));
         }
 
-        function removeLocalTask(task) {
-            let tasks = JSON.parse(localStorage.getItem('tasks'));
-            const index = tasks.indexOf(task);
-            if (index > -1) {
-                tasks.splice(index, 1);
-            }
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+        function removeLocalTask(t) {
+            let ts = JSON.parse(localStorage.getItem('tasks'));
+            ts.splice(ts.indexOf(t), 1);
+            localStorage.setItem('tasks', JSON.stringify(ts));
         }
     </script>
 </body>
