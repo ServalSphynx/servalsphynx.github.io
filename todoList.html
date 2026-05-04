@@ -75,6 +75,31 @@
   .subnav:hover .subnav-content {
     display: block;
   }
+
+  .container { 
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0,1);
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    width: 100%
+    max-width: 400px;
+  }
+
+  .input-group { display: flex; gap: 8px; margin-bottom: 20px; }
+  input[type="text"] { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px; }
+        
+  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+  #addBtn { background-color: #007bff; color: white; }
+
+  ul { list-style: none; padding: 0; margin-top: 20px; }
+  li { background: #fafafa; border: 1px solid #eee; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .delete-btn { background: #ff4757; color: white; padding: 5px 10px; font-size: 12px; }
+
+  h1 { text-align: center;}
+
   </style>
   
 </head>
@@ -82,124 +107,53 @@
   
   <div class="navbar">
     <a class="active" href="https://servalsphynx.github.io"><i class="fa fa-home" aria-hidden="true" style="font-size:24px; color: white;"></i></a>
+    <a class="active" 
   </div>
 
   <div class="container">
-    <h2>To Do</h2>
+    <h1>To Do List</h1>
     <div class="input group">
-      <input type="text" id="taksInput" placeholder="Add a task">
+      <input type="text" id="taskIn" placeholder="Add a task...">
       <button id="addBtn" onclick="addTask()">Add</button>
     </div>
-
     <ul id="taskList"></ul>
-
-    <div class="actions">
-        <button class="btn-secondary" onclick="downloadList()">Download List</button>
-        <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">Import</button>
-        <input type="file" id="fileInput" accept=".txt" onchange="importList(event)">
-    </div>
   </div>
-  
+
   <script>
-        const taskInput = document.getElementById('taskInput');
-        const taskList = document.getElementById('taskList');
+    const taskIn = document.getElementById('taskIn');
+    const taskList = document.getElementById('taskList');
 
-        window.onload = getTasks;
+    window.onload = getTasks;
+    
+    function addTask() {
+      const val = taskIn.value.trim();
+      if(!val) return;
+      createTaskElement(val);
+      saveLocalTask(val);
+      taskIn.val = '';
+    }
 
-        function addTask() {
-            const val = taskInput.value.trim();
-            if (!val) return;
-            createTaskElement(val);
-            saveLocalTask(val);
-            taskInput.value = '';
-        }
+    function createTaskElement(task) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${task}</span><button class="delete-btn">Delete</button>`;
+      li.querySelector('.delete-btn').onclick = () => {
+        li.remove();
+        removeLocalTask(task);
+      };
+      taskList.appendChild(li);
+    }
 
-        function createTaskElement(task) {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${task}</span><button class="delete-btn">Delete</button>`;
-            li.querySelector('.delete-btn').onclick = () => {
-                li.remove();
-                removeLocalTask(task);
-            };
-            taskList.appendChild(li);
-        }
+    function saveLocalTask(t) {
+      let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+      ts.push(t);
+      localStorage.setItem('tasks', JSON.stringify(ts));
+    }
 
-        // --- Export Logic ---
-        function downloadList() {
-            const tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            if (tasks.length === 0) return alert("Nothing to download!");
+    function getTasks() {
+      let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+      ts.forEach(t => createTaskElement(t));
+    }
+  </script>
 
-            const date = new Date().toLocaleDateString();
-            let fileContent = `TO-DO LIST (${date})\n====================\n\n`;
-            tasks.forEach((t, i) => { fileContent += `${i + 1}. [ ] ${t}\n`; });
-
-            const blob = new Blob([fileContent], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `todo-export-${date.replace(/\//g, '-')}.txt`;
-            link.click();
-        }
-
-        // --- NEW: Import Logic ---
-        function importList(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                const lines = content.split('\n');
-                const importedTasks = [];
-
-                // Regex: Look for lines starting with numbers, a dot, and "[ ] "
-                // It captures everything after the space.
-                const taskRegex = /^\d+\.\s\[\s\]\s(.*)$/;
-
-                lines.forEach(line => {
-                    const match = line.match(taskRegex);
-                    if (match && match[1]) {
-                        importedTasks.push(match[1].trim());
-                    }
-                });
-
-                if (importedTasks.length > 0) {
-                    if (confirm(`Found ${importedTasks.length} tasks. Do you want to replace your current list?`)) {
-                        replaceList(importedTasks);
-                    }
-                } else {
-                    alert("No valid tasks found in this file.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function replaceList(newTasks) {
-            // Clear UI and LocalStorage
-            taskList.innerHTML = '';
-            localStorage.setItem('tasks', JSON.stringify(newTasks));
-            // Rebuild UI
-            newTasks.forEach(t => createTaskElement(t));
-        }
-
-        // Standard Storage Logic
-        function saveLocalTask(t) {
-            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            ts.push(t);
-            localStorage.setItem('tasks', JSON.stringify(ts));
-        }
-
-        function getTasks() {
-            let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
-            ts.forEach(t => createTaskElement(t));
-        }
-
-        function removeLocalTask(t) {
-            let ts = JSON.parse(localStorage.getItem('tasks'));
-            const idx = ts.indexOf(t);
-            if (idx > -1) ts.splice(idx, 1);
-            localStorage.setItem('tasks', JSON.stringify(ts));
-        }
-    </script>
-  
 </body>
 </html>
