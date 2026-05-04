@@ -16,8 +16,14 @@
   body {
     font-family: Arial, Helvetica, sans-serif;
     margin: 0;
+    background-color: #eef2f3;
   }
-  
+
+  .dark-mode {
+    background-color: #313338;
+    color: white;
+  }
+
   .navbar {
     overflow: hidden;
     background-color: #333; 
@@ -77,6 +83,7 @@
   }
 
   .container { 
+    color: black;
     background: #fff;
     padding: 2rem;
     border-radius: 12px;
@@ -100,6 +107,11 @@
 
   h1 { text-align: center;}
 
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
+  .btn-secondary { background-color: #6c757d; color: white; width: 100%; }
+
+  #fileInput { display: none; }
+
   </style>
   
 </head>
@@ -107,6 +119,12 @@
   
   <div class="navbar">
     <a class="active" href="https://servalsphynx.github.io"><i class="fa fa-home" aria-hidden="true" style="font-size:24px; color: white;"></i></a>
+    <div class="nav pull-right">
+      <button type="button" onclick="toggleDark()">
+        <span class="glyphicon glyphicon-plus"></span>
+        <i class="fa fa-moon-o" aria-hidden="true"></i>
+      </button>
+    </div>
   </div>
 
   <div class="container">
@@ -123,6 +141,7 @@
     const taskList = document.getElementById('taskList');
 
     window.onload = getTasks;
+    window.onload = checkDark;
     
     function addTask() {
       const val = taskIn.value.trim();
@@ -152,6 +171,32 @@
       let ts = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
       ts.forEach(t => createTaskElement(t));
     }
+
+    function toggleDark() {
+      const element = document.body;
+      element.classList.toggle("dark-mode");
+      if (element.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+      }
+      else {
+        localStorage.setItem("theme", "light");
+      }
+    }
+
+    function checkDark() {
+      if (localStorage.getItem("theme") == "dark") {
+        toggleDark();
+      }
+      else if (localStorage.getItem("theme") == "light") {
+        return false;
+      }
+      else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+	toggleDark();
+      }
+
+    }
+
+
   </script>
 
 </body>
