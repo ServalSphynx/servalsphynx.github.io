@@ -2,6 +2,9 @@ body {
     font-family: Arial, Helvetica, sans-serif;
     margin: 0;
     background-color: #eef2f3;
+    justify-content: center;
+    display:flex;
+    padding-top:55px;
   }
 
   .dark-mode {
@@ -12,6 +15,9 @@ body {
   .navbar {
     overflow: hidden;
     background-color: #333; 
+    position: fixed;
+    top: 0;
+    width: 100%;
   }
 
   .navbar a {
