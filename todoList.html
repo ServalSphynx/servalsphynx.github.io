@@ -40,7 +40,7 @@
 
   h1 { text-align: center;}
 
-  .actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; width:100%; max-width: 450px; }
   .btn-secondary { background-color: #6c757d; color: white; width: 100%; }
 
   #fileInput { display: none; }
@@ -69,19 +69,27 @@
     <ul id="taskList"></ul>
   </div>
 
+  <div class="actions">
+    <button class="btn-secondary" onclick="downloadList()">Download List (.txt)</button>
+    <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">Import from File</button>
+    <input type="file" id="fileInput" accept=".txt" onchange="importList(event)">
+  </div>
+
   <script>
     const taskIn = document.getElementById('taskIn');
     const taskList = document.getElementById('taskList');
 
-    window.onload = getTasks;
-    window.onload = checkDark;
+    window.onload = () => {
+      getTasks();
+      checkDark();
+    };
     
     function addTask() {
       const val = taskIn.value.trim();
       if(!val) return;
       createTaskElement(val);
       saveLocalTask(val);
-      taskIn.val = '';
+      taskIn.value = '';
     }
 
     function createTaskElement(task) {
@@ -127,6 +135,52 @@
 	      toggleDark();
       }
     }
+
+    function removeLocalTask(t) {
+      let ts = JSON.parse(localStorage.getItem('tasks'));
+      const idx = ts.indexOf(t);
+      if (idx > -1) ts.splice(idx, 1);
+      localStorage.setItem('tasks', JSON.stringify(ts));
+    }
+
+    function downloadList() {
+      const tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+      if (tasks.length === 0) return alert("Nothing to download!");
+        const date = new Date().toLocaleDateString();
+        let fileContent = `TO-DO LIST (${date})\n====================\n\n`;
+        tasks.forEach((t, i) => { fileContent += `${i + 1}. [ ] ${t}\n`; });
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `todo-export-${date.replace(/\//g, '-')}.txt`;
+        link.click();
+      }
+
+    function importList(event) {
+      const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const content = e.target.result;
+          const lines = content.split('\n');
+          const importedTasks = [];
+          const taskRegex = /^\d+\.\s\[\s\]\s(.*)$/;
+          lines.forEach(line => {
+            const match = line.match(taskRegex);
+              if (match && match[1]) {
+                 importedTasks.push(match[1].trim());
+              }
+          });
+          if (importedTasks.length > 0) {
+            if (confirm(`Found ${importedTasks.length} tasks. Do you want to replace your current list?`)) {
+              replaceList(importedTasks);
+            }
+          } else {
+              alert("No valid tasks found in this file.");
+            }
+          };
+          reader.readAsText(file);
+        }
   </script>
 
 </body>
