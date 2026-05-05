@@ -3,8 +3,10 @@ body {
     margin: 0;
     background-color: #eef2f3;
     justify-content: center;
-    display:flex;
-    padding-top:55px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    padding-top: 55px;
   }
 
   .dark-mode {
